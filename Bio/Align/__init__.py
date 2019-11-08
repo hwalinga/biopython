@@ -1508,22 +1508,26 @@ class PairwiseAligner(_aligners.PairwiseAligner):
             raise AttributeError(message)
         _aligners.PairwiseAligner.__setattr__(self, key, value)
 
-    def align(self, seqA, seqB):
+    def align(self, seqA, seqB, **kwargs):
         """Return the alignments of two sequences using PairwiseAligner."""
         if isinstance(seqA, Seq):
             seqA = str(seqA)
         if isinstance(seqB, Seq):
             seqB = str(seqB)
+        for name, value in kwargs.items():
+            setattr(self, name, value)
         score, paths = _aligners.PairwiseAligner.align(self, seqA, seqB)
         alignments = PairwiseAlignments(seqA, seqB, score, paths)
         return alignments
 
-    def score(self, seqA, seqB):
+    def score(self, seqA, seqB, **kwargs):
         """Return the alignments score of two sequences using PairwiseAligner."""
         if isinstance(seqA, Seq):
             seqA = str(seqA)
         if isinstance(seqB, Seq):
             seqB = str(seqB)
+        for name, value in kwargs.items():
+            setattr(self, name, value)
         return _aligners.PairwiseAligner.score(self, seqA, seqB)
 
 
