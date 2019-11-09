@@ -22,6 +22,7 @@ from Bio.SeqRecord import SeqRecord, _RestrictedDict
 from Bio import Alphabet
 
 from Bio.Align import _aligners
+
 # Import errors may occur here if a compiled aligners.c file
 # (_aligners.pyd or _aligners.so) is missing or if the user is
 # importing from within the Biopython source tree, see PR #2007:
@@ -115,8 +116,9 @@ class MultipleSeqAlignment(object):
     reference sequence with special status.
     """
 
-    def __init__(self, records, alphabet=None,
-                 annotations=None, column_annotations=None):
+    def __init__(
+        self, records, alphabet=None, annotations=None, column_annotations=None
+    ):
         """Initialize a new MultipleSeqAlignment object.
 
         Arguments:
@@ -169,9 +171,9 @@ class MultipleSeqAlignment(object):
             self.extend(records)
             if alphabet is None:
                 # No alphabet was given, take a consensus alphabet
-                self._alphabet = Alphabet._consensus_alphabet(rec.seq.alphabet for
-                                                              rec in self._records
-                                                              if rec.seq is not None)
+                self._alphabet = Alphabet._consensus_alphabet(
+                    rec.seq.alphabet for rec in self._records if rec.seq is not None
+                )
 
         # Annotations about the whole alignment
         if annotations is None:
@@ -188,8 +190,9 @@ class MultipleSeqAlignment(object):
 
     def _set_per_column_annotations(self, value):
         if not isinstance(value, dict):
-            raise TypeError("The per-column-annotations should be a "
-                            "(restricted) dictionary.")
+            raise TypeError(
+                "The per-column-annotations should be a " "(restricted) dictionary."
+            )
         # Turn this into a restricted-dictionary (and check the entries)
         if len(self):
             # Use the standard method to get the length
@@ -200,7 +203,9 @@ class MultipleSeqAlignment(object):
             # Bit of a problem case... number of columns is undefined
             self._per_col_annotations = None
             if value:
-                raise ValueError("Can't set per-column-annotations without an alignment")
+                raise ValueError(
+                    "Can't set per-column-annotations without an alignment"
+                )
 
     def _get_per_column_annotations(self):
         if self._per_col_annotations is None:
@@ -217,7 +222,8 @@ class MultipleSeqAlignment(object):
     column_annotations = property(
         fget=_get_per_column_annotations,
         fset=_set_per_column_annotations,
-        doc="""Dictionary of per-letter-annotation for the sequence.""")
+        doc="""Dictionary of per-letter-annotation for the sequence.""",
+    )
 
     def _str_line(self, record, length=50):
         """Return a truncated string representation of a SeqRecord (PRIVATE).
@@ -228,14 +234,20 @@ class MultipleSeqAlignment(object):
             if len(record.seq) <= length:
                 return "%s %s" % (record.seq, record.id)
             else:
-                return "%s...%s %s" \
-                    % (record.seq[:length - 3], record.seq[-3:], record.id)
+                return "%s...%s %s" % (
+                    record.seq[: length - 3],
+                    record.seq[-3:],
+                    record.id,
+                )
         else:
             if len(record.seq) <= length:
                 return "%s %s" % (record.seq, record.id)
             else:
-                return "%s...%s %s" \
-                    % (record.seq[:length - 6], record.seq[-3:], record.id)
+                return "%s...%s %s" % (
+                    record.seq[: length - 6],
+                    record.seq[-3:],
+                    record.id,
+                )
 
     def __str__(self):
         """Return a multi-line string summary of the alignment.
@@ -260,8 +272,10 @@ class MultipleSeqAlignment(object):
         See also the alignment's format method.
         """
         rows = len(self._records)
-        lines = ["%s alignment with %i rows and %i columns"
-                 % (str(self._alphabet), rows, self.get_alignment_length())]
+        lines = [
+            "%s alignment with %i rows and %i columns"
+            % (str(self._alphabet), rows, self.get_alignment_length())
+        ]
         if rows <= 20:
             lines.extend(self._str_line(rec) for rec in self._records)
         else:
@@ -285,9 +299,13 @@ class MultipleSeqAlignment(object):
         """
         # A doctest for __repr__ would be nice, but __class__ comes out differently
         # if run via the __main__ trick.
-        return "<%s instance (%i records of length %i, %s) at %x>" % \
-            (self.__class__, len(self._records),
-             self.get_alignment_length(), repr(self._alphabet), id(self))
+        return "<%s instance (%i records of length %i, %s) at %x>" % (
+            self.__class__,
+            len(self._records),
+            self.get_alignment_length(),
+            repr(self._alphabet),
+            id(self),
+        )
         # This version is useful for doing eval(repr(alignment)),
         # but it can be VERY long:
         # return "%s(%s, %s)" \
@@ -341,6 +359,7 @@ class MultipleSeqAlignment(object):
         if format_spec:
             from Bio._py3k import StringIO
             from Bio import AlignIO
+
             handle = StringIO()
             AlignIO.write([self], handle, format_spec)
             return handle.getvalue()
@@ -415,8 +434,7 @@ class MultipleSeqAlignment(object):
 
         return max_length
 
-    def add_sequence(self, descriptor, sequence, start=None, end=None,
-                     weight=1.0):
+    def add_sequence(self, descriptor, sequence, start=None, end=None, weight=1.0):
         """Add a sequence to the alignment.
 
         This doesn't do any kind of alignment, it just adds in the sequence
@@ -447,9 +465,7 @@ class MultipleSeqAlignment(object):
         # populate it with the descriptor.
         # For backwards compatibility, also store this in the
         # SeqRecord's description property.
-        new_record = SeqRecord(new_seq,
-                               id=descriptor,
-                               description=descriptor)
+        new_record = SeqRecord(new_seq, id=descriptor, description=descriptor)
 
         # hack! We really need to work out how to deal with annotations
         # and features in biopython. Right now, I'll just use the
@@ -675,8 +691,10 @@ class MultipleSeqAlignment(object):
         if not isinstance(other, MultipleSeqAlignment):
             raise NotImplementedError
         if len(self) != len(other):
-            raise ValueError("When adding two alignments they must have the same length"
-                             " (i.e. same number or rows)")
+            raise ValueError(
+                "When adding two alignments they must have the same length"
+                " (i.e. same number or rows)"
+            )
         alpha = Alphabet._consensus_alphabet([self._alphabet, other._alphabet])
         merged = (left + right for left, right in zip(self, other))
         # Take any common annotation:
@@ -828,8 +846,9 @@ class MultipleSeqAlignment(object):
             return "".join(rec[col_index] for rec in self._records[row_index])
         else:
             # e.g. sub_align = align[1:4, 5:7], gives another alignment
-            new = MultipleSeqAlignment((rec[col_index] for rec in self._records[row_index]),
-                                       self._alphabet)
+            new = MultipleSeqAlignment(
+                (rec[col_index] for rec in self._records[row_index]), self._alphabet
+            )
             if self.column_annotations and len(new) == len(self):
                 # All rows kept (although could have been reversed)
                 # Perserve the column annotations too,
@@ -1055,14 +1074,14 @@ class PairwiseAlignment(object):
         end1, end2 = path[0]
         if end1 > 0 or end2 > 0:
             if end1 <= end2:
-                for c2 in seq2[:end2 - end1]:
+                for c2 in seq2[: end2 - end1]:
                     s2 = str(c2)
                     s1 = " " * len(s2)
                     aligned_seq1.append(s1)
                     aligned_seq2.append(s2)
                     pattern.append(s1)
             else:  # end1 > end2
-                for c1 in seq1[:end1 - end2]:
+                for c1 in seq1[: end1 - end2]:
                     s1 = str(c1)
                     s2 = " " * len(s1)
                     aligned_seq1.append(s1)
@@ -1195,28 +1214,29 @@ class PairwiseAlignment(object):
         blockSizes = ",".join(map(str, blockSizes)) + ","
         qStarts = ",".join(map(str, qStarts)) + ","
         tStarts = ",".join(map(str, tStarts)) + ","
-        words = [str(match),
-                 str(mismatch),
-                 str(repmatch),
-                 str(Ns),
-                 str(Qgapcount),
-                 str(Qgapbases),
-                 str(Tgapcount),
-                 str(Tgapbases),
-                 strand,
-                 Qname,
-                 str(Qsize),
-                 str(Qstart),
-                 str(Qend),
-                 Tname,
-                 str(Tsize),
-                 str(Tstart),
-                 str(Tend),
-                 str(blockcount),
-                 blockSizes,
-                 qStarts,
-                 tStarts,
-                 ]
+        words = [
+            str(match),
+            str(mismatch),
+            str(repmatch),
+            str(Ns),
+            str(Qgapcount),
+            str(Qgapbases),
+            str(Tgapcount),
+            str(Tgapbases),
+            strand,
+            Qname,
+            str(Qsize),
+            str(Qstart),
+            str(Qend),
+            Tname,
+            str(Tsize),
+            str(Tstart),
+            str(Tend),
+            str(blockcount),
+            blockSizes,
+            qStarts,
+            tStarts,
+        ]
         line = "\t".join(words) + "\n"
         return line
 
@@ -1529,4 +1549,5 @@ class PairwiseAligner(_aligners.PairwiseAligner):
 
 if __name__ == "__main__":
     from Bio._utils import run_doctest
+
     run_doctest()
