@@ -16,14 +16,13 @@ from __future__ import print_function
 
 import sys  # Only needed to check if we are using Python 2 or 3
 from contextlib import contextmanager
-from functools import wraps
+from functools import update_wrapper
 
+from Bio import Alphabet
 from Bio._py3k import raise_from
+from Bio.Align import _aligners
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord, _RestrictedDict
-from Bio import Alphabet
-
-from Bio.Align import _aligners
 
 # Import errors may occur here if a compiled aligners.c file
 # (_aligners.pyd or _aligners.so) is missing or if the user is
@@ -1397,46 +1396,44 @@ class PairwiseAlignments(object):
         next = __next__
 
 
-def classinstancemethod(func):
-    """With wraps we can preserve the original doc string and name."""
+class classinstancemethod:
+    """Decorator to have a method both be an instance and a class method.
 
-    @wraps(func)
-    class classinstancemethod_wrapped:
-        """Decorator to have a method both be an instance and a class method
+    The wrapped methods first argument is self, the second cls.
 
-        The methods first argument is self, the second cls.
+    Inspired by:
+    https://stackoverflow.com/a/48809254/8477066
+    """
 
-        Inspired by:
-        https://stackoverflow.com/a/48809254/8477066
+    def __init__(self, method, instance=None, owner=None):
+        """Called when decorating the method.
+
+        Only the method is set during decoration. The other attributes
+        are used whenever the decorated method is requested from a
+        class or object. See __get__.
+
+        The update_wrapper function is intended to preserve metadata from
+        the decorated function.
         """
+        update_wrapper(self, method)
+        self.method = method
+        self.instance = instance
+        self.owner = owner
 
-        def __init__(self, method, instance=None, owner=None):
-            """Called when decorating the method
+    def __get__(self, instance, owner):
+        """Return the class with the correct values for instance and owner.
 
-            Only the method is set during decoration. The other attributes
-            are used whenever the decorated method is requested from a
-            class or object. See __get__.
-            """
-            self.method = method
-            self.instance = instance
-            self.owner = owner
+        The instance is None whenver the method is called from the class,
+        and thus the owner.
+        """
+        return type(self)(self.method, instance, owner)
 
-        def __get__(self, instance, owner):
-            """Return the class with the correct values for instance and owner.
+    def __call__(self, *args, **kwargs):
+        """Call method with cls (self.owner) and self (self.instance).
 
-            The instance is None whenver the method is called from the class,
-            and thus the owner.
-            """
-            return type(self)(self.method, instance, owner)
-
-        def __call__(self, *args, **kwargs):
-            """Call method with cls (self.owner) and self (self.instance).
-
-            As can be read in __get__, the instance is None if called from the class.
-            """
-            return self.method(self.instance, self.owner, *args, **kwargs)
-
-    return classinstancemethod_wrapped(func)
+        As can be read in __get__, the instance is None if called from the class.
+        """
+        return self.method(self.instance, self.owner, *args, **kwargs)
 
 
 class PairwiseAligner(_aligners.PairwiseAligner):
@@ -1577,7 +1574,7 @@ class PairwiseAligner(_aligners.PairwiseAligner):
         """Return the alignments of two sequences using PairwiseAligner."""
         with cls.temp_kwargs(
             self or cls(), seqA, seqB, **kwargs
-        ) as instance, seqA, seqB:
+        ) as (instance, seqA, seqB):
             score, paths = _aligners.PairwiseAligner.align(instance, seqA, seqB)
             alignments = PairwiseAlignments(seqA, seqB, score, paths)
         return alignments
@@ -1587,7 +1584,7 @@ class PairwiseAligner(_aligners.PairwiseAligner):
         """Return the alignments score of two sequences using PairwiseAligner."""
         with cls.temp_kwargs(
             self or cls(), seqA, seqB, **kwargs
-        ) as instance, seqA, seqB:
+        ) as (instance, seqA, seqB):
             score = _aligners.PairwiseAligner.score(instance, seqA, seqB)
         return score
 
@@ -1603,7 +1600,7 @@ class PairwiseAligner(_aligners.PairwiseAligner):
         try:
             yield instance, seqA, seqB
         finally:
-            instance.set(old_kwargs)
+            instance.set(**old_kwargs)
 
     def set(self, **kwargs):
         for name, value in kwargs.items():
