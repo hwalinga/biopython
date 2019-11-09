@@ -1528,23 +1528,34 @@ class PairwiseAligner(_aligners.PairwiseAligner):
             raise AttributeError(message)
         _aligners.PairwiseAligner.__setattr__(self, key, value)
 
-    def align(self, seqA, seqB):
+    def align(self, seqA, seqB, **kwargs):
         """Return the alignments of two sequences using PairwiseAligner."""
         if isinstance(seqA, Seq):
             seqA = str(seqA)
         if isinstance(seqB, Seq):
             seqB = str(seqB)
+        old_kwargs = {name: getattr(self, name) for name in kwargs.keys()}
+        self.set(**kwargs)
         score, paths = _aligners.PairwiseAligner.align(self, seqA, seqB)
         alignments = PairwiseAlignments(seqA, seqB, score, paths)
+        self.set(**old_kwargs)
         return alignments
 
-    def score(self, seqA, seqB):
+    def score(self, seqA, seqB, **kwargs):
         """Return the alignments score of two sequences using PairwiseAligner."""
         if isinstance(seqA, Seq):
             seqA = str(seqA)
         if isinstance(seqB, Seq):
             seqB = str(seqB)
-        return _aligners.PairwiseAligner.score(self, seqA, seqB)
+        old_kwargs = {name: getattr(self, name) for name in kwargs.keys()}
+        self.set(**kwargs)
+        score = _aligners.PairwiseAligner.score(self, seqA, seqB)
+        self.set(**old_kwargs)
+        return score
+
+    def set(self, **kwargs):
+        for name, value in kwargs.items():
+            setattr(self, name, value)
 
 
 if __name__ == "__main__":
